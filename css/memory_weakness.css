@@ -1,0 +1,11 @@
+#panel {
+  width: 1000px;
+}
+img {
+  padding: 1px;
+  width: 70px;
+  height: 95px;
+  border: 1px solid;
+  border-radius: 5px;
+  border-color: #aaa;
+}

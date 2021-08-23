@@ -1,29 +1,98 @@
-// 1～3人のターン性で遊べるようにする
-// 入力された人数を受け取って、人数分の名前入力欄を表示する
-// TODO: nullなら入力してくださいと表示してスタートさせない
-// TODO: 入力された名前を使って結果のカウントと表示をする
-document.getElementById("ok").onclick = function () {
-    let playerElm = document.getElementById("player");
-    let player = playerElm.value
-    let allPlayerName = "";
-    let playerName = document.getElementById("player_name");
-    for (i = 0; i < player; i++) {
-        allPlayerName = allPlayerName + 
-            `${i + 1}人目 <input type="text"  id=player_name${i + 1} maxlength="10"/> さん<br>`;
-    }
-    playerName.innerHTML = allPlayerName;
+// 変数定義
+// プレイヤーの名前のリスト
+let playerList = [];
+// プレイヤーごとにそろったペアをカウントするリスト
+let countList = [0, 0, 0];
+// 現在のプレイヤーを判断する変数
+let curPlayerJudgeing = 0;
+// ゲームの終了を判断する変数
+let gameFinishJudgeing = 0;
+// 取得する要素と挿入するタグ
+let playerElm = '';
+let player = 0;
+let playerNameTag = '';
+let playerName = '';
+let curPlayerTag = '';
+let curPlayer =　'';
+let countTag = '';
+let count = '';
+let panelTag = '';
+let panel = '';
+let resultTag = '';
+let result = '';
+// カードの合計枚数
+const CARD_LENGTH = 52;
+// カードを順番通りに格納するリスト
+let card = [];
+// カードの絵柄
+let type = ["heart", "spade", "club", "diamond"];
+// カードをシャッフルして格納するリスト
+let rndCard = [];
+// カードをシャッフルするとき重複をなくすためのリスト
+let chofukuNum = [];
+// 1枚目のカード
+let FirstCardElm;
+let firstCardId = '';
+// 2枚目のカード
+let SecondCardElm;
+let secondCardId = '';
+// 1枚目のカードかどうかのフラグ
+let firstCardFlg = true;
+
+// はずれた場合に裏に戻す処理を遅らせるためのタイマー定義
+function delay(n) {
+    return new Promise(function(resolve){
+        setTimeout(resolve, n*1000);
+    });
 }
 
-// カードの枚数
-const cardLength = 52;
 
-// STARTボタン押下時に実行
+// STARTボタンを非活性にしておく
+document.getElementById("start").disabled = true;
+
+// OKボタンクリック時に実行(ゲーム設定)
+document.getElementById("ok").onclick = function () {
+    playerElm = document.getElementById("player");
+    player = playerElm.value
+    playerName = document.getElementById("player_name");
+    // 入力されていない場合、アラートを表示する
+    if (player == 0) {
+        alert("人数を設定してください")
+    // 入力されている場合、人数分の名前入力欄を表示してSTARTボタンを活性化
+    } else {
+        for (let i = 0; i < player; i++) {
+            playerNameTag += `${i + 1}人目 <input type="text" id=player_name${i} maxlength="10"/> さん<br>`;
+        }
+        playerName.innerHTML = playerNameTag;
+        document.getElementById("start").disabled = false;
+    }
+}
+
+// STARTボタンクリック時に実行
 document.getElementById("start").onclick = function () {
+    // 初期化
+    playerList = [];
+    countList = [0, 0, 0];
+    
+    // 入力された名前をリストに入れる
+    for (let i = 0; i < player; i++) {
+        playerList.push(document.getElementById("player_name" + i).value);
+    }
+
+    // 現在のプレイヤーを表示
+    curPlayer = document.getElementById("current_player");
+    curPlayerTag = `${playerList[0]}さんのターンです`;
+    curPlayer.textContent = curPlayerTag;
+
+    // プレイヤーごとのカウントを表示
+    countTag = "";
+    count = document.getElementById("count");
+    for (let i = 0; i < player; i++) {
+        countTag += `${playerList[i]}さん ${countList[i]}ペア　`;
+    }
+    count.textContent = countTag;
 
     // 52枚（4つの絵柄×13枚）のカードを用意する
-    let card = [];
-    let type = ["heart", "spade", "club", "diamond"];
-
     for(let i = 0; i < type.length; i++) {
         for(let j = 1; j < 14; j++) {
             let sliceNum = ('00' + j).slice(-2);
@@ -32,16 +101,8 @@ document.getElementById("start").onclick = function () {
     }
 
     // カードをシャッフルする
-    let rndCard = [];
-    let num = [];
-    let chofukuNum = [];
-
-    for(i = 0; i < cardLength; i++) {
-        num.push(i);
-    }
-
-    while(rndCard.length < cardLength) {
-        let rndNum = Math.floor(Math.random()*52);
+    while(rndCard.length < CARD_LENGTH) {
+        let rndNum = Math.floor(Math.random()*CARD_LENGTH);
         if(!chofukuNum.includes(rndNum)) {
             rndCard.push(card[rndNum]);
             chofukuNum.push(rndNum);
@@ -49,59 +110,77 @@ document.getElementById("start").onclick = function () {
     }
     console.log(rndCard);
 
-    // カードを表示させる
-    let allPanel = "";
-    let panel = document.getElementById("panel");
-    for (i = 0; i < cardLength; i++) {
-        allPanel = allPanel + `<img src=./img/back.png id=${rndCard[i]} />`;
+    // カードを表示する
+    panel = document.getElementById("panel");
+    for (i = 0; i < CARD_LENGTH; i++) {
+        panelTag = panelTag + `<img src=./img/back.png id=${rndCard[i]} />`;
     }
-    panel.innerHTML = allPanel;
+    panel.innerHTML = panelTag;
 }
 
-// カードをめくる
-let firstCard = '';
-let secondCard = '';
-let firstCardFlg = true;
-let FirstCardElm;
-let SecondCardElm;
-
-document.getElementById("panel").addEventListener('click', function(event) {
+// カードをクリック時に実行
+document.getElementById("panel").addEventListener('click', async function(event) {
     let target = event.target;
-    if (target.id != "panel" || target.id != "finish") {
-        // 1枚目
+    if (target.id != "panel" || target.id != "finish" || target.id != "finish") {
+        // 1枚目をめくる
         if (firstCardFlg == true) {
-            firstCard = target.id;
-            FirstCardElm = document.getElementById(firstCard);
-            FirstCardElm.src = `./img/${firstCard}.png`;
-            console.log(firstCardFlg);
+            firstCardId = target.id;
+            FirstCardElm = document.getElementById(firstCardId);
+            FirstCardElm.src = `./img/${firstCardId}.png`;
             console.log(FirstCardElm);
             firstCardFlg = false;
-        // 2枚目
+        // 2枚目をめくる
         } else {
-            secondCard = target.id;
-            SecondCardElm = document.getElementById(secondCard);
-            SecondCardElm.src = `./img/${secondCard}.png`;
-            console.log(firstCardFlg);
+            secondCardId = target.id;
+            SecondCardElm = document.getElementById(secondCardId);
+            SecondCardElm.src = `./img/${secondCardId}.png`;
             console.log(SecondCardElm);
             firstCardFlg = true;
 
             // 1枚目と2枚目の結果を照合する
-            // 一緒であればカードを非表示にする
-            // TODO: 並びがずれてしまうので表のままにした。finishはもう押せないようにしたい
-            if (firstCard.split('_')[2] == secondCard.split('_')[2]) {
-                // FirstCardElm.id = "finish";
-                // SecondCardElm.id = "finish";
+            // そろった場合、非表示にする
+            if (firstCardId.split('_')[2] == secondCardId.split('_')[2]) {
                 console.log('そろった！');
-            // 異なれば裏に戻す
+                // 1秒待って(awaitはPromise処理の結果が返ってくるまで一時停止してくれる)、非表示にする
+                await delay(1);
+                document.getElementById(firstCardId).style.visibility ="hidden";
+                document.getElementById(secondCardId).style.visibility ="hidden";
+                // プレイヤーごとのカウントを変更する
+                countList[curPlayerJudgeing % player]++;
+                countTag = "";
+                count = document.getElementById("count");
+                for (let i = 0; i < player; i++) {
+                    countTag += `${playerList[i]}さん ${countList[i]}ペア　`;
+                }
+                count.textContent = countTag;
+                gameFinishJudgeing++;
+            // はずれた場合、裏に戻す
             } else {
-                // FirstCardElm.src = './img/back.png';
-                // SecondCardElm.src = './img/back.png';
                 console.log('はずれた');
+                // 1秒待って(awaitはPromise処理の結果が返ってくるまで一時停止してくれる)、裏に戻す
+                await delay(1);
+                FirstCardElm.src = './img/back.png';
+                SecondCardElm.src = './img/back.png';
+                // 現在のプレイヤーを変更する
+                curPlayerJudgeing++;
+                curPlayer = document.getElementById("current_player");
+                curPlayer.textContent = `${playerList[curPlayerJudgeing % player]}さんのターンです`;
             }
         }
     }
+    // ゲーム終了時
+    if (gameFinishJudgeing == CARD_LENGTH/2) {
+        // 勝った人を表示する
+        // TODO: 同率1位に対応できてない
+        let winner = countList.indexOf(Math.max.apply(null, countList));
+        resultTag = "";
+        result = document.getElementById("result");
+        resultTag = `最終結果： ${playerList[winner]}さんの勝ち！`
+        result.textContent = resultTag;
+    }
 })
 
-// TODO: 3人それぞれにそろった枚数を表示する
-// TODO: ゲーム終了時に勝った人を表示する
-// TODO: ゲーム終了時にそろった枚数のカウントをリセットする
+// TODO: STARTボタンを何度も押すとカードが無限に増えてしまう
+// TODO: OKボタンを何度も押すと名前入力欄が無限に増えてしまう
+// TODO: awaitの秒数を無視して別のカードを連打するとおかしくなる
+// TODO: 非表示のカードもクリックできてしまう

@@ -1,5 +1,11 @@
-#panel {
-  width: 1000px;
+.container {
+  text-align: center;
+}
+.settei {
+  padding: 0.5em 1em;
+  margin: 0.5em 5em 2em 5em;
+  background-color: #cde4ff;
+  border-radius: 10px;
 }
 img {
   padding: 1px;
@@ -8,4 +14,11 @@ img {
   border: 1px solid;
   border-radius: 5px;
   border-color: #aaa;
+}
+p {
+  padding: 0px;
+  margin: 0px;
+}
+#result {
+  font-weight: bold;
 }

@@ -46,7 +46,6 @@ function delay(n) {
     });
 }
 
-
 // STARTボタンを非活性にしておく
 document.getElementById("start").disabled = true;
 
@@ -65,15 +64,12 @@ document.getElementById("ok").onclick = function () {
         }
         playerName.innerHTML = playerNameTag;
         document.getElementById("start").disabled = false;
+        document.getElementById("ok").disabled = true;
     }
 }
 
 // STARTボタンクリック時に実行
 document.getElementById("start").onclick = function () {
-    // 初期化
-    playerList = [];
-    countList = [0, 0, 0];
-    
     // 入力された名前をリストに入れる
     for (let i = 0; i < player; i++) {
         playerList.push(document.getElementById("player_name" + i).value);
@@ -121,6 +117,9 @@ document.getElementById("start").onclick = function () {
 // カードをクリック時に実行
 document.getElementById("panel").addEventListener('click', async function(event) {
     let target = event.target;
+    // ゲーム開始時、STARTボタンを非活性にしておく
+    document.getElementById("start").disabled = true;
+
     if (target.id != "panel" || target.id != "finish" || target.id != "finish") {
         // 1枚目をめくる
         if (firstCardFlg == true) {
@@ -168,9 +167,9 @@ document.getElementById("panel").addEventListener('click', async function(event)
             }
         }
     }
-    // ゲーム終了時
+
+    // ゲーム終了時、勝った人を表示する
     if (gameFinishJudgeing == CARD_LENGTH/2) {
-        // 勝った人を表示する
         // TODO: 同率1位に対応できてない
         let winner = countList.indexOf(Math.max.apply(null, countList));
         resultTag = "";
@@ -180,7 +179,5 @@ document.getElementById("panel").addEventListener('click', async function(event)
     }
 })
 
-// TODO: STARTボタンを何度も押すとカードが無限に増えてしまう
-// TODO: OKボタンを何度も押すと名前入力欄が無限に増えてしまう
 // TODO: awaitの秒数を無視して別のカードを連打するとおかしくなる
 // TODO: 非表示のカードもクリックできてしまう

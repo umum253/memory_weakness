@@ -72,6 +72,9 @@ document.getElementById("ok").onclick = function () {
 
 // STARTボタンクリック時に実行する処理
 document.getElementById("start").onclick = function () {
+    // ゲーム開始時、STARTボタンを非活性にしておく
+    document.getElementById("start").disabled = true;
+
     // 入力されたプレイヤーの名前を取得する
     for (let i = 0; i < player; i++) {
         playerList.push(document.getElementById("player_name" + i).value);
@@ -111,7 +114,7 @@ document.getElementById("start").onclick = function () {
     // カードを表示する
     panel = document.getElementById("panel");
     for (i = 0; i < CARD_LENGTH; i++) {
-        panelTag = panelTag + `<img src=./img/back.png id=${rndCard[i]} />`;
+        panelTag = panelTag + `<input type="image" src=./img/back.png id=${rndCard[i]} class="img"/>`;
     }
     panel.innerHTML = panelTag;
 }
@@ -119,10 +122,8 @@ document.getElementById("start").onclick = function () {
 // カードクリック時に実行する処理
 document.getElementById("panel").addEventListener('click', async function(event) {
     let target = event.target;
-    // ゲーム開始時、STARTボタンを非活性にしておく
-    document.getElementById("start").disabled = true;
 
-    if (target.id != "panel" || target.id != "finish" || target.id != "finish") {
+    if (target.id != "panel") {
         // 1枚目をめくる
         if (firstCardFlg == true) {
             firstCardId = target.id;
@@ -130,6 +131,7 @@ document.getElementById("panel").addEventListener('click', async function(event)
             FirstCardElm.src = `./img/${firstCardId}.png`;
             console.log(FirstCardElm);
             firstCardFlg = false;
+            document.getElementById(firstCardId).disabled = true;
         // 2枚目をめくる
         } else {
             secondCardId = target.id;
@@ -142,10 +144,12 @@ document.getElementById("panel").addEventListener('click', async function(event)
             // そろった場合、非表示にする
             if (firstCardId.split('_')[2] == secondCardId.split('_')[2]) {
                 console.log('そろった！');
-                // 1秒待ってからカードを非表示にする
+                // 1秒待ってからカードを非表示・非活性にする
                 await delay(1);
                 document.getElementById(firstCardId).style.visibility ="hidden";
                 document.getElementById(secondCardId).style.visibility ="hidden";
+                document.getElementById(firstCardId).disabled = true;
+                document.getElementById(secondCardId).disabled = true;
                 // プレイヤーごとのカウントを変更する
                 countList[curPlayerJudging % player]++;
                 countTag = "";
@@ -157,6 +161,7 @@ document.getElementById("panel").addEventListener('click', async function(event)
                 gameFinishJudging++;
             // はずれた場合、裏に戻す
             } else {
+                document.getElementById(firstCardId).disabled = false;
                 console.log('はずれた');
                 // 1秒待ってからカードを裏に戻す
                 await delay(1);
@@ -172,14 +177,25 @@ document.getElementById("panel").addEventListener('click', async function(event)
 
     // ゲーム終了時、勝った人を表示する
     if (gameFinishJudging == CARD_LENGTH/2) {
-        // TODO: 同率1位に対応できてない
-        let winner = countList.indexOf(Math.max.apply(null, countList));
         resultTag = "";
         result = document.getElementById("result");
-        resultTag = `最終結果： ${playerList[winner]}さんの勝ち！`
+        resultTag = "最終結果：";
+        // 同率1位も考慮して勝った人のインデックスのリストを取得する
+        let winnerList = new Array();
+        let winner;
+        for (let i = 0; i < player; i++) {
+            winner = countList.indexOf(Math.max(...countList), winner);
+            if (winner != -1) {
+                winnerList.push(winner);
+                winner++;
+            }
+        }
+        // 勝った人のインデックスのリストから、勝った人の名前を表示させる
+        for (let i = 0; i < winnerList.length; i++) {
+            resultTag += `　${playerList[winnerList[i]]}さんの勝ち！`;
+        }
         result.textContent = resultTag;
     }
 })
 
 // TODO: awaitの秒数を無視して別のカードを連打するとおかしくなる
-// TODO: 非表示のカードもクリックできてしまう
